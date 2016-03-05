@@ -18,7 +18,7 @@
 
 let dateFormatter = d3.time.format('%Y/%m/%d %H:%M');
 let xFilter; //crossfilter
-let dayDimension, solarFluxDimension, windDirDimension; //dimensions- basically what you want as x values
+let dayDimension, weekDimension, solarFluxDimension, windDirDimension; //dimensions- basically what you want as x values
 let dayTempGroup, rainFallGroup, windDirGroup; //xfilter groups
 
 let tempChart, batteryChart, rainfallChart, windChart; // types of charts
@@ -30,9 +30,9 @@ let transitionDuration = 500; //default transition times for chart zooming etc
  */
 function dashboardInit() {
   let tempChartWidth = document.getElementById('tempChart').offsetWidth,
-      tempChartHeight = tempChartWidth * 0.3,
+      tempChartHeight = tempChartWidth * 0.5,
       rainFallChartWidth = document.getElementById('rainfallChart').offsetWidth,
-      rainFallChartHeight = rainFallChartWidth * 0.3;
+      rainFallChartHeight = rainFallChartWidth * 0.5;
   tempChart = dc.lineChart('#tempChart')
       .width(tempChartWidth)
       //.minWidth(150)
@@ -65,6 +65,7 @@ function getData() {
         d.windDir = d.windDir % 360;
       }
       d.day = d3.time.day(d.dateTime);
+      d.week = d3.time.week(d.dateTime);
       d.windDirType = Math.floor(d.windDir / 45);//classify the wind direction into 1 of 8 quadrants
     });
     //data.forEach(d => {
@@ -83,6 +84,7 @@ function getData() {
 function setXfilter(data) {
   xFilter = crossfilter(data);
   dayDimension = xFilter.dimension(d => d.day);
+  weekDimension = xFilter.dimension(d => d.week);
   solarFluxDimension = xFilter.dimension(d => d.solarFlux);
   windDirDimension = xFilter.dimension(d => d.windDirType);
   console.log(d3.max(data, d => d.windDir))
@@ -105,7 +107,7 @@ function setXfilter(data) {
     }
   });
 
-  rainFallGroup = dayDimension.group().reduceSum(d => d.rainfall);
+  rainFallGroup = weekDimension.group().reduceSum(d => d.rainfall);
   windDirGroup = windDirDimension.group().reduceCount();
 }
 
@@ -119,24 +121,29 @@ function chartRender(data){
       .valueAccessor(d => d.value.avgTemp)
       .x(d3.time.scale().domain([minDate, maxDate]))
       .yAxisLabel('degrees Celcius')
+      .renderTitle(true)
+      .title(d => `${d.key}\n ${d.value}degrees`)
       .on('filtered', () => {
         console.log('filtered')
         d3.select('#windDirChart').datum(windDirGroup.all()).call(radarChart());
-      }).on("zoomed", function(chart, filter){...});
+      }).on("zoomed", function(chart, filter){console.log('zoomed')});
 
   rainfallChart
-      .dimension(dayDimension)
+      .dimension(weekDimension)
       .group(rainFallGroup)
       .valueAccessor(d => d.value)
       .yAxisLabel('mm')
       .x(d3.time.scale().domain([minDate, maxDate]))
+      //.x(d3.time.scale().domain([minDate, maxDate]).nice(d3.time.week))
+      .xUnits(d3.time.weeks)
       .elasticY(true)
       .on("zoomed", function(chart, filter){console.log('zoomed')})
       .on("postRender", function(chart){console.log('postRender')})
       .rangeChart(tempChart);
 
-  //console.log(windDirGroup.all())
-  windChart = d3.select('#windDirChart').datum(windDirGroup.all()).call(radarChart());
+  windChart = d3.select('#windDirChart').datum(windDirGroup.all())
+      .call(radarChart().width(document.getElementById('windDirChart').offsetWidth)
+          .height(document.getElementById('windDirChart').offsetWidth));
   dc.renderAll();
 }
 

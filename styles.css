@@ -1,0 +1,11 @@
+.chart-card {
+    padding: 30px;
+    margin: 15px;
+    background: green;
+    border-radius: 10px;
+    min-height: 400px;
+}
+
+.chart-container {
+    background-color: white;
+}
