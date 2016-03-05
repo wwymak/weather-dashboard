@@ -7,6 +7,7 @@
     <link rel="stylesheet" href="http://cdnjs.cloudflare.com/ajax/libs/dc/1.7.5/dc.css" type="text/css"/>
     <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/css/bootstrap.min.css" />
     <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/3.5.5/d3.min.js"></script>
+    <script src="d3.promise.js"></script>
     <script src="crossfilter.js"></script>
     <script src="http://cdnjs.cloudflare.com/ajax/libs/dc/1.7.5/dc.min.js"></script>
 
@@ -15,9 +16,11 @@
 <div class="container">
     <div class="page-header"><h1>What does the weather looks like?</h1></div>
     <div class="row">
-        <div class="col-sm-12" id="tempChart"></div>
-        <div class="col-sm-12" id="rainfallChart"></div>
-        <div class="col-sm-4" id="windDirChart"></div>
+        <div class="col-sm-6" id="tempChart"><h3>Temperature</h3></div>
+        <div class="col-sm-6" id="rainfallChart"><h3>Rainfall</h3></div>
+    </div>
+    <div class="row">
+        <div class="col-sm-4" id="windDirChart"><h3>Wind directions</h3></div>
         <div class="col-sm-4" id="batteryChart"></div>
     </div>
 </div>
