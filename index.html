@@ -2,8 +2,9 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width">
     <title>Weather Dashboard</title>
-    <link href="http://cdnjs.cloudflare.com/ajax/libs/dc/1.7.5/dc.css" type="text/css"/>
+    <link rel="stylesheet" href="http://cdnjs.cloudflare.com/ajax/libs/dc/1.7.5/dc.css" type="text/css"/>
     <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/css/bootstrap.min.css" />
     <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/3.5.5/d3.min.js"></script>
     <script src="crossfilter.js"></script>
@@ -12,10 +13,12 @@
 </head>
 <body>
 <div class="container">
+    <div class="page-header"><h1>What does the weather looks like?</h1></div>
     <div class="row">
         <div class="col-sm-12" id="tempChart"></div>
+        <div class="col-sm-12" id="rainfallChart"></div>
         <div class="col-sm-4" id="windDirChart"></div>
-        <div class="col-sm-4" id=""></div>
+        <div class="col-sm-4" id="batteryChart"></div>
     </div>
 </div>
 <script src="dashboard.js"></script>
