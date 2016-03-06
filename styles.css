@@ -9,3 +9,9 @@
 .chart-container {
     background-color: white;
 }
+
+.raxis {
+    stroke: black;
+    fill: none;
+    stroke-width: 0.3px;
+}

@@ -68,13 +68,6 @@ function getData() {
       d.week = d3.time.week(d.dateTime);
       d.windDirType = Math.floor(d.windDir / 45);//classify the wind direction into 1 of 8 quadrants
     });
-    //data.forEach(d => {
-    //  d.month = d3.time.month(d.dateTime);
-    //  d.day = d3.time.day(d.dateTime);
-    //  d.hour = d3.time.hour(d.dateTime);
-    //  d.windDirType = Math.floor(d.windDir / 45); //classify the wind direction into 1 of 8 quadrantsa
-    //});
-
     return data
   }, (err) => {
     alert("problem fetching data, please reload page");
@@ -87,7 +80,6 @@ function setXfilter(data) {
   weekDimension = xFilter.dimension(d => d.week);
   solarFluxDimension = xFilter.dimension(d => d.solarFlux);
   windDirDimension = xFilter.dimension(d => d.windDirType);
-  console.log(d3.max(data, d => d.windDir))
 
   dayTempGroup = dayDimension.group().reduce((p, v) => {
     ++p.count;
@@ -124,22 +116,25 @@ function chartRender(data){
       .renderTitle(true)
       .title(d => `${d.key}\n ${d.value}degrees`)
       .on('filtered', () => {
-        console.log('filtered')
-        d3.select('#windDirChart').datum(windDirGroup.all()).call(radarChart());
-      }).on("zoomed", function(chart, filter){console.log('zoomed')});
+        console.log('filtered', rainFallGroup.all(), windDirGroup.reduceCount().all())
+        d3.select('#windDirChart').datum(windDirGroup.reduceCount().all()).call(radarChart());
+      });
+
+  tempChart.brush().on('brushend', () => {console.log('brushend')})
 
   rainfallChart
       .dimension(weekDimension)
       .group(rainFallGroup)
       .valueAccessor(d => d.value)
       .yAxisLabel('mm')
+      .brushOn(false)
       .x(d3.time.scale().domain([minDate, maxDate]))
-      //.x(d3.time.scale().domain([minDate, maxDate]).nice(d3.time.week))
       .xUnits(d3.time.weeks)
       .elasticY(true)
-      .on("zoomed", function(chart, filter){console.log('zoomed')})
-      .on("postRender", function(chart){console.log('postRender')})
-      .rangeChart(tempChart);
+      .elasticX(true);
+      //.on("zoomed", function(chart, filter){console.log('zoomed')})
+      //.on("postRender", function(chart){console.log('postRender')})
+      //.rangeChart(tempChart);
 
   windChart = d3.select('#windDirChart').datum(windDirGroup.all())
       .call(radarChart().width(document.getElementById('windDirChart').offsetWidth)
@@ -164,7 +159,7 @@ function radarChart(){
     selection.each((data) => {
       //select the svg if it exists
       svg = this.selectAll("svg.radarchart").data([data]);
-      console.log(data, svg)
+      console.log(data, svg, d3.max(data, d => d.value))
       //or add a new one if not
       let newSVG = svg.enter().append('svg').attr('class', 'radarchart');
 
@@ -173,11 +168,14 @@ function radarChart(){
 
       angleScale.domain([0, data.length]);
       radiusScale.domain([0, d3.max(data, d => d.value)]);
-
-      let radialG = newSVG.append('g').attr('class', 'radial-bars')
+console.log(radiusScale.domain())
+      newSVG.append('g').attr('class', 'radial-bars')
           .attr('transform', 'translate(' +  width /2 + ',' + height/2 + ')');
 
+      let radialG = d3.selectAll('.radial-bars');
+
       drawRadialBars(data);
+      drawRadialAxis();
 
       function drawRadialBars(data) {
         let arc = d3.svg.arc().startAngle((d, i) => angleScale(i))
@@ -185,9 +183,26 @@ function radarChart(){
             .innerRadius(0)
             .outerRadius(d => radiusScale(d.value));
         let radarSectors = radialG.selectAll('path').data(data)
-            radarSectors.enter().append('path');
-            radarSectors.attr('d', arc).attr('class', 'radial-sector')
+
+        radarSectors.enter().append('path');
+
+        radarSectors.attr('d', arc).attr('class', 'radial-sector')
                 .attr('fill', (d, i) => colorScale(i));
+      }
+
+      function drawRadialAxis() {
+        let rAxisVals = d3.range(3).map(function(d){return (d + 1)* radiusScale.domain()[1]/3});
+
+        let radialAxis = radialG.selectAll('circle.raxis').data(rAxisVals);
+        radialAxis.enter().append('circle')
+        radialAxis.attr('r', d =>  radiusScale(d))
+            .attr('cx', 0).attr('cy', 0)
+            .attr('class', 'raxis');
+
+        let radialLabels = radialG.selectAll('text').data(rAxisVals);
+        radialLabels.enter().append('text');
+        radialLabels.attr('x', 0).attr('y', d =>radiusScale(d))
+            .text(d => Math.round(radiusScale(d)))
       }
 
     })

@@ -1,5 +1,2 @@
-Experiment to make a weather dashboard with sampel data (JCMB_2015.csv), d3js and dcjs
-units:
--renamed the headers on the csv so to make parsing more convenient
-date-time,
-atmospheric pressure: mBar,rainfall (mm),wind speed (m/s),wind direction (degrees),surface temperature (C),relative humidity (%),solar flux (Kw/m2),battery (V)
+A small experiment to see what a weather dashboard looks like, with a bit of dc.js and d3.js
+Not too happy with how dc.js wires with the radar chart at the moment...

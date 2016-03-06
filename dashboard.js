@@ -72,13 +72,6 @@ function getData() {
       d.week = d3.time.week(d.dateTime);
       d.windDirType = Math.floor(d.windDir / 45); //classify the wind direction into 1 of 8 quadrants
     });
-    //data.forEach(d => {
-    //  d.month = d3.time.month(d.dateTime);
-    //  d.day = d3.time.day(d.dateTime);
-    //  d.hour = d3.time.hour(d.dateTime);
-    //  d.windDirType = Math.floor(d.windDir / 45); //classify the wind direction into 1 of 8 quadrantsa
-    //});
-
     return data;
   }, function (err) {
     alert("problem fetching data, please reload page");
@@ -99,9 +92,6 @@ function setXfilter(data) {
   windDirDimension = xFilter.dimension(function (d) {
     return d.windDirType;
   });
-  console.log(d3.max(data, function (d) {
-    return d.windDir;
-  }));
 
   dayTempGroup = dayDimension.group().reduce(function (p, v) {
     ++p.count;
@@ -139,21 +129,20 @@ function chartRender(data) {
   }).x(d3.time.scale().domain([minDate, maxDate])).yAxisLabel('degrees Celcius').renderTitle(true).title(function (d) {
     return d.key + '\n ' + d.value + 'degrees';
   }).on('filtered', function () {
-    console.log('filtered');
-    d3.select('#windDirChart').datum(windDirGroup.all()).call(radarChart());
-  }).on("zoomed", function (chart, filter) {
-    console.log('zoomed');
+    console.log('filtered', rainFallGroup.all(), windDirGroup.reduceCount().all());
+    d3.select('#windDirChart').datum(windDirGroup.reduceCount().all()).call(radarChart());
+  });
+
+  tempChart.brush().on('brushend', function () {
+    console.log('brushend');
   });
 
   rainfallChart.dimension(weekDimension).group(rainFallGroup).valueAccessor(function (d) {
     return d.value;
-  }).yAxisLabel('mm').x(d3.time.scale().domain([minDate, maxDate]))
-  //.x(d3.time.scale().domain([minDate, maxDate]).nice(d3.time.week))
-  .xUnits(d3.time.weeks).elasticY(true).on("zoomed", function (chart, filter) {
-    console.log('zoomed');
-  }).on("postRender", function (chart) {
-    console.log('postRender');
-  }).rangeChart(tempChart);
+  }).yAxisLabel('mm').brushOn(false).x(d3.time.scale().domain([minDate, maxDate])).xUnits(d3.time.weeks).elasticY(true).elasticX(true);
+  //.on("zoomed", function(chart, filter){console.log('zoomed')})
+  //.on("postRender", function(chart){console.log('postRender')})
+  //.rangeChart(tempChart);
 
   windChart = d3.select('#windDirChart').datum(windDirGroup.all()).call(radarChart().width(document.getElementById('windDirChart').offsetWidth).height(document.getElementById('windDirChart').offsetWidth));
   dc.renderAll();
@@ -180,7 +169,9 @@ function radarChart() {
     selection.each(function (data) {
       //select the svg if it exists
       svg = _this.selectAll("svg.radarchart").data([data]);
-      console.log(data, svg);
+      console.log(data, svg, d3.max(data, function (d) {
+        return d.value;
+      }));
       //or add a new one if not
       var newSVG = svg.enter().append('svg').attr('class', 'radarchart');
 
@@ -190,10 +181,13 @@ function radarChart() {
       radiusScale.domain([0, d3.max(data, function (d) {
         return d.value;
       })]);
+      console.log(radiusScale.domain());
+      newSVG.append('g').attr('class', 'radial-bars').attr('transform', 'translate(' + width / 2 + ',' + height / 2 + ')');
 
-      var radialG = newSVG.append('g').attr('class', 'radial-bars').attr('transform', 'translate(' + width / 2 + ',' + height / 2 + ')');
+      var radialG = d3.selectAll('.radial-bars');
 
       drawRadialBars(data);
+      drawRadialAxis();
 
       function drawRadialBars(data) {
         var arc = d3.svg.arc().startAngle(function (d, i) {
@@ -204,9 +198,31 @@ function radarChart() {
           return radiusScale(d.value);
         });
         var radarSectors = radialG.selectAll('path').data(data);
+
         radarSectors.enter().append('path');
+
         radarSectors.attr('d', arc).attr('class', 'radial-sector').attr('fill', function (d, i) {
           return colorScale(i);
+        });
+      }
+
+      function drawRadialAxis() {
+        var rAxisVals = d3.range(3).map(function (d) {
+          return (d + 1) * radiusScale.domain()[1] / 3;
+        });
+
+        var radialAxis = radialG.selectAll('circle.raxis').data(rAxisVals);
+        radialAxis.enter().append('circle');
+        radialAxis.attr('r', function (d) {
+          return radiusScale(d);
+        }).attr('cx', 0).attr('cy', 0).attr('class', 'raxis');
+
+        var radialLabels = radialG.selectAll('text').data(rAxisVals);
+        radialLabels.enter().append('text');
+        radialLabels.attr('x', 0).attr('y', function (d) {
+          return radiusScale(d);
+        }).text(function (d) {
+          return Math.round(radiusScale(d));
         });
       }
     });
